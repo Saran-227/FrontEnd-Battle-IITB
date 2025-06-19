@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embodied Carbon Emissions Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f3f0;
+            color: #333;
+            padding: 40px;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 60px;
+            align-items: start;
+        }
+
+        /* Left Panel - Filters and Controls */
+        .left-panel {
+            padding-right: 20px;
+        }
+
+        .filter-section {
+            margin-bottom: 40px;
+        }
+
+        .filter-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            margin-bottom: 30px;
+        }
+
+        .filter-label {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 20px;
+            border: 2px solid #8b5a5a;
+            background: transparent;
+            color: #8b5a5a;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .filter-btn.active {
+            background: #8b5a5a;
+            color: white;
+        }
+
+        .filter-btn:hover {
+            background: #8b5a5a;
+            color: white;
+        }
+
+        .filter-btn::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #8b5a5a;
+            border-radius: 50%;
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .filter-btn.active::before {
+            background: white;
+        }
+
+        /* Key Section */
+        .key-section {
+            margin-top: 40px;
+        }
+
+        .key-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .key-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .key-line {
+            width: 40px;
+            height: 2px;
+            margin-right: 15px;
+        }
+
+        .key-line.dashed {
+            border-top: 2px dashed #8b5a5a;
+            background: none;
+        }
+
+        .key-line.solid {
+            background: #8b5a5a;
+        }
+
+        /* Right Panel - Chart and Header */
+        .right-panel {
+            position: relative;
+        }
+
+        .header-section {
+            text-align: right;
+            margin-bottom: 40px;
+        }
+
+        .main-title {
+            font-size: 48px;
+            font-weight: 300;
+            color: #8b5a5a;
+            line-height: 1.1;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #999;
+            margin-bottom: 20px;
+            position: relative;
+            right: 80px;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            border: 2px solid #999;
+            background: transparent;
+            color: #999;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .download-btn:hover {
+            border-color: #8b5a5a;
+            color: #8b5a5a;
+        }
+
+        .download-icon {
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .download-icon::after {
+            content: '↓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+        }
+
+        /* Chart Section */
+        .chart-container {
+            position: relative;
+            height: 500px;
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            padding-left: 60px;
+            padding-bottom: 40px;
+        }
+
+        .y-axis {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 40px;
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-right: 10px;
+        }
+
+        .y-axis-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .y-axis-title {
+            position: absolute;
+            left: -110px;
+            top: 20%;
+            transform: rotate(-90deg) translateX(-50%);
+            transform-origin: center;
+            font-size: 14px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .chart-bars {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .bar {
+            background: #8b5a5a;
+            width: 30px;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .bar:hover {
+            background: #a66a6a;
+            transform: scale(1.05);
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .reference-line {
+            position: absolute;
+            left: 60px;
+            right: 0;
+            height: 2px;
+            z-index: 10;
+        }
+
+        .reference-line.line-500 {
+            bottom: 206px; /* 500/1200 * 420px + 40px */
+            border-top: 2px dashed #8b5a5a;
+        }
+
+        .reference-line.line-600 {
+            bottom: 250px; /* 600/1200 * 420px + 40px */
+            background: #8b5a5a;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .main-title {
+                font-size: 36px;
+            }
+
+            .chart-container {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            .main-title {
+                font-size: 28px;
+            }
+
+            .filter-buttons {
+                flex-direction: column;
+            }
+
+            .filter-btn {
+                width: 100%;
+                text-align: left;
+                padding-left: 30px;
+            }
+
+            .chart {
+                padding-left: 40px;
+            }
+
+            .bar {
+                width: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-title {
+                font-size: 24px;
+            }
+
+            .chart-container {
+                height: 400px;
+                padding: 15px;
+            }
+
+            .bar {
+                width: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div class="filter-section">
+                <h2 class="filter-title">Filter by</h2>
+                
+                <div class="filter-group">
+                    <label class="filter-label">Type</label>
+                    <div class="filter-buttons">
+                        <button class="filter-btn" data-filter="refurbishment">Refurbishment</button>
+                        <button class="filter-btn" data-filter="new-build">New build</button>
+                        <button class="filter-btn active" data-filter="all">All</button>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="complete">Complete</button>
+                        <button class="filter-btn" data-filter="estimate">Estimate</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="key-section">
+                <h3 class="key-title">Key</h3>
+                <div class="key-item">
+                    <div class="key-line dashed"></div>
+                    <span>500 kgCO₂e/m² - Embodied Carbon Target 2030</span>
+                </div>
+                <div class="key-item">
+                    <div class="key-line solid"></div>
+                    <span>600 kgCO₂e/m² - Embodied Carbon Target 2025</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="header-section">
+                <h1 class="main-title">EMBODIED<br>CARBON<br>EMISSIONS</h1>
+                <p class="subtitle">Intensity measured by kgCO₂e/m²</p>
+                <a href="#" class="download-btn" id="downloadBtn">
+                    <span>Download the data</span>
+                    <div class="download-icon"></div>
+                </a>
+            </div>
+
+            <div class="chart-container">
+                <div class="y-axis">
+                    <span class="y-axis-label">1200</span>
+                    <span class="y-axis-label">1000</span>
+                    <span class="y-axis-label">800</span>
+                    <span class="y-axis-label">600</span>
+                    <span class="y-axis-label">400</span>
+                    <span class="y-axis-label">200</span>
+                    <span class="y-axis-label">0</span>
+                    <div class="y-axis-title">Embodied carbon intensity (kgCO₂e/m²)</div>
+                </div>
+
+                <div class="reference-line line-500"></div>
+                <div class="reference-line line-600"></div>
+
+                <div class="chart">
+                    <div class="chart-bars" id="chartBars">
+                        <!-- Bars will be generated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart data
+        const chartData = [
+            549, 278, 875, 617, 506, 36, 185, 191, 122, 550, 
+            881, 539, 269, 29, 82, 44, 109, 106, 607, 528
+        ];
+
+        // Generate chart bars
+        function generateChart() {
+            const chartBars = document.getElementById('chartBars');
+            const maxValue = 1200;
+            
+            chartBars.innerHTML = '';
+            
+            chartData.forEach((value, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                
+                // Calculate height as percentage of max value
+                const height = (value / maxValue) * 100;
+                bar.style.height = `${height}%`;
+                
+                // Add value label
+                const valueLabel = document.createElement('div');
+                valueLabel.className = 'bar-value';
+                valueLabel.textContent = value;
+                bar.appendChild(valueLabel);
+                
+                // Add hover effect
+                bar.addEventListener('mouseenter', () => {
+                    bar.style.background = '#a66a6a';
+                });
+                
+                bar.addEventListener('mouseleave', () => {
+                    bar.style.background = '#8b5a5a';
+                });
+                
+                chartBars.appendChild(bar);
+            });
+        }
+
+        // Filter functionality
+        function setupFilters() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from siblings
+                    const siblings = button.parentElement.querySelectorAll('.filter-btn');
+                    siblings.forEach(sibling => sibling.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    button.classList.add('active');
+                    
+                    // Here you would typically filter the data
+                    console.log('Filter applied:', button.dataset.filter);
+                });
+            });
+        }
+
+        // Download functionality
+        function setupDownload() {
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            downloadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Create CSV data
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "Project,Carbon Intensity (kgCO₂e/m²)\n"
+                    + chartData.map((value, index) => `Project ${index + 1},${value}`).join('\n');
+                
+                // Create download link
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement('a');
+                link.setAttribute('href', encodedUri);
+                link.setAttribute('download', 'carbon_emissions_data.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log('Data downloaded');
+            });
+        }
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            generateChart();
+            setupFilters();
+            setupDownload();
+        });
+
+        // Add animation on load
+        window.addEventListener('load', () => {
+            const bars = document.querySelectorAll('.bar');
+            bars.forEach((bar, index) => {
+                setTimeout(() => {
+                    bar.style.opacity = '0';
+                    bar.style.transform = 'scaleY(0)';
+                    bar.style.transformOrigin = 'bottom';
+                    bar.style.transition = 'all 0.6s ease';
+                    
+                    setTimeout(() => {
+                        bar.style.opacity = '1';
+                        bar.style.transform = 'scaleY(1)';
+                    }, 50);
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
